@@ -1,0 +1,179 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Node Scrim</title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="description" content="" />
+		<meta name="keywords" content="" />
+		<script src="../js/jquery.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<link href="http://www.picnicss.com/nut/picnic_3_2+nav+modal_2.min.css" rel="stylesheet" type="text/css">
+		<link href="../css/style.css" rel="stylesheet" type="text/css">
+		
+		<script type="text/javascript">
+			var chat = io.connect('http://localhost:8080/chat');
+			var permission = false;
+			var userName = "<%= displayName %>";
+			var roomIdLength = 5;
+			var roomId = document.URL.substring(document.URL.length-roomIdLength);
+
+			chat.emit('joinRoom', { url : document.URL.substring(document.URL.length-roomIdLength)} );
+
+			chat.on('response', function(data) {
+				$("#chat").append('<img src='+data.photo+'></img>' + data.name + ": " + data.content + "</br>");
+			});
+
+			chat.on('errorCode', function(data) {
+				$("#error").css('display', 'block');
+				switch(data.statusCode) {
+					case 0: $("#error").html("Room is currently occupied, please navigate to a different room."); break;
+					case 1: $("#error").html("Room does not currently exist, please navigate to the home page."); break;
+				}
+			});
+
+			chat.on('updateClients', function(data) {
+				console.log(data);
+				$("#clientPool").empty();
+				$.each(data.clients, function(k, v) {
+					$("#clientPool").append("<li id='user_"+v.displayName+"'><img src='"+v.photo_small+"'/>" + v.displayName + "</li>");
+				});
+			});
+
+			chat.on('timer', function(data) {
+				$("#timer").html(data.time);
+				timerInterval = setInterval(function() {
+					if($("#timer").html() > 0) {
+						$("#timer").html($("#timer").html() - 1);
+					} else {
+						clearInterval(timerInterval);
+					}
+				}, 1000);
+			});
+
+			chat.on('captainSelect', function(data) {
+				$("#clientPool").each( function(k,v) {
+					console.log(k + " " + v);
+					if(userName == data.client.displayName) {
+						$(v).css('background-color', 'red');
+						permission = true;
+					}
+				});
+			});
+
+			//Create a disabled connect button and enable once Game object receives an active indication.
+			chat.on('serverStartup', function(data) {
+				console.log("Server starting on " + data.region + " for map " + data.map);
+			});
+
+			chat.on('serverReady', function(data) {
+				console.log("Server ready. Connect here: " + data.url);
+			});
+
+			//Receive a banned map decision from team captain
+			chat.on('mapBan' , function(data) {
+				$("#mapPool img[data-map-name="+data.map+"]").addClass("banned");
+			});
+
+			//Receive a picked region decision from team captain
+			chat.on('regionSelect', function(data) {
+				$("#serverPool").empty();
+				$("#serverPool").append("<li>"+data.region+"</li>");
+			});
+
+			$(document).ready(function() {
+
+				$("#mapPool img").click(function() {
+					if(permission) {
+						$(this).addClass("banned");
+						chat.emit('mapBan', { map : $(this).attr("data-map-name"), url : roomId });
+					}
+				});
+
+				$("#serverPool li").click(function() {
+					if(permission) {
+						var dataRegion = $(this).attr("data-region");
+
+						chat.emit('regionSelect', { region : dataRegion, url : roomId });
+
+						$("#serverPool").empty();
+						$("#serverPool").append("<li>"+dataRegion+"</li>");
+					}
+				})
+
+				$("#submit").click(function() {
+					chat.emit('message', {
+						name : userName,
+						content : $("#textinput").val(),
+						photo : "<%= photo_s %>"
+					});
+					$("#textinput").val("");
+				});
+
+				$("#textinput").keypress(function(e) {
+					if(e.which == 13) {
+						chat.emit('message', {
+							name : userName,
+							content : $("#textinput").val(),
+							photo : "<%= photo_s %>"
+						});
+
+						$("#textinput").val("");
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<div id="error" class="error">
+			<center></center>
+		</div>
+		<div class="row">
+			<div class="container">
+				<div id="chatbox">
+					<div id="chat" style="height:480px;overflow-x:hidden; overflow-y:scroll;">
+
+					</div>
+					<div id="messageSection" >
+						<div id="messaging">
+							<label>Message:</label>
+							<input type="text" id="textinput" />
+							<input type="submit" id="submit" value="Submit" />
+							Time Left:<span id="timer"></span>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="row">
+				<div>
+					<label>Current Users</label>
+					<ul id="clientPool">
+
+					</ul>
+				</div>
+				<div></div>
+				<div>
+					<ul id="serverPool">
+						<li data-region="NY"><div class="button">New York</div></li>
+						<li data-region="SF"><div class="button">San Francisco</div></li>
+						<li data-region="AMS"><div class="button">Amsterdam</div></li>
+						<li data-region="LDN"><div class="button">London</div></li>
+					</ul>
+
+				</div>
+			</div>
+			<div>
+				<label>Map Pool</label>
+				<ul id="mapPool">
+					<li><img src="../images/dust2.png" data-map-name="de_dust2" /></li>
+					<li><img src="../images/mirage.png" data-map-name="de_mirage" /></li>
+					<li><img src="../images/cache.png" data-map-name="de_cache" /></li>
+					<li><img src="../images/cbble.png" data-map-name="de_cbble" /></li>
+					<li><img src="../images/overpass.png" data-map-name="de_overpass" /></li>
+					<li><img src="../images/train.png" data-map-name="de_train" /></li>
+					<li><img src="../images/inferno.png" data-map-name="de_inferno" /></li>
+				</ul>
+			</div>
+		</div>
+	</body>
+</html>

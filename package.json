@@ -1,0 +1,38 @@
+{
+  "name": "nodescrim",
+  "version": "0.0.0",
+  "description": "Project that allows for quick scrims to be setup between two opposing teams in Counter-Strike: Global Offensive.",
+  "main": "server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sgawrys/NodeScrim.git"
+  },
+  "author": "Stefan Gawrys",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Sgawrys/NodeScrim/issues"
+  },
+  "homepage": "https://github.com/Sgawrys/NodeScrim",
+  "dependencies": {
+    "body-parser": "^1.12.2",
+    "do-wrapper": "^1.1.2",
+    "ejs": "^2.3.1",
+    "express": "^4.12.3",
+    "express-session": "^1.11.1",
+    "jade": "^1.9.2",
+    "passport": "^0.2.1",
+    "passport-steam": "^0.1.4",
+    "rcon": "^1.0.0",
+    "sequest": "^0.8.0",
+    "socket.io": "^2.3.0",
+    "srcds-rcon": "^1.1.7",
+    "yamljs": "^0.2.1"
+  }
+}
